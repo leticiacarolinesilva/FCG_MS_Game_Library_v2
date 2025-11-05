@@ -1,0 +1,59 @@
+name: CD - Deploy Docker no Amazon ECR
+
+on:
+  push:
+    branches:
+      - master
+jobs:
+  deploy:
+    name: Buildar e enviar imagem para o ECR
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout do repositório
+      uses: actions/checkout@v4
+
+    - name: Configurar AWS credentials
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: ${{ secrets.AWS_REGION }}
+
+    - name: Login no ECR
+      id: login-ecr
+      uses: aws-actions/amazon-ecr-login@v2
+
+    - name: Build da imagem Docker
+      run: |
+        docker build -t fcg-gamelibrary .
+
+    - name: Tag para o ECR
+      run: |
+        # docker tag fcg-gamelibrary:latest ${{ secrets.ECR_REPOSITORY }}:latest
+        docker tag fcg-gamelibrary:latest ${{ secrets.ECR_REPOSITORY }}:latest
+    - name: Push no ECR
+      run: |
+        docker push ${{ secrets.ECR_REPOSITORY }}:latest
+
+    - name: Configurar o kubectl
+      uses: aws-actions/eks-setup-kubectl@v4
+      with:
+        version: '1.33'
+
+    - name: Obter credenciais do cluster EKS
+      run: |
+        aws eks update-kubeconfig --region ${{ secrets.AWS_REGION }} --name ${{ secrets.EKS_CLUSTER_NAME }}
+
+    - name: Create or update Kubernetes secret for Game Library
+      run: |
+        kubectl create secret generic fcg-ms-gamelibrary-secret \
+        --from-literal=ConnectionStrings__DefaultConnection="${{ secrets.GAMELIBRARY_DB_CONNECTION }}" \
+        --from-literal=Elastic__Uri="${{ secrets.ELASTIC_URI }}" \
+        --from-literal=Elastic__XApiKey="${{ secrets.ELASTIC_XAPIKEY }}" \
+        --dry-run=client -o yaml | kubectl apply -f -
+        
+    - name: Aplicar Deployment no EKS
+      run: |
+        kubectl set image deployment/users-deployment users=${{ secrets.ECR_REPOSITORY }}:latest --namespace default
+        kubectl rollout status deployment/users-deployment --namespace default

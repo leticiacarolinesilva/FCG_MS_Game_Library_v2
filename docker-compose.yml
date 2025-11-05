@@ -1,0 +1,47 @@
+services:
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: fcg_ms_game_library:latest
+    container_name: gameplatform_api
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+      - ConnectionStrings__DefaultConnection=Host=postgres;Port=5432;Database=db-fcg-gamelibrary;Username=postgres;Password=gamelibrary123
+      - Elastic__Uri=https://my-elasticsearch-project-c3fa12.es.us-east-1.aws.elastic.cloud:443
+      - Elastic__XApiKey=U
+    ports:
+      - "5011:80"
+    networks:
+      - gameplatform_network
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+
+  postgres:
+    image: postgres:15-alpine
+    container_name: gameplatform_postgres_v2
+    environment:
+      POSTGRES_USER: gameuser
+      POSTGRES_PASSWORD: gamepassword
+      POSTGRES_DB: gameplatform
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./src/DockerForPostgree/init.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U gameuser -d gameplatform"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - gameplatform_network
+    restart: unless-stopped
+
+networks:
+  gameplatform_network:
+
+volumes:
+  postgres_data:
