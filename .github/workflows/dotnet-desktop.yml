@@ -2,9 +2,7 @@ name: Deploy GameLibrary to EKS
 
 on:
   push:
-    branches: [ main ]
-  pull_request:
-    branches: [ main ]
+    branches: [ master ]
 
 # 🔐 PERMISSÕES OIDC
 permissions:
