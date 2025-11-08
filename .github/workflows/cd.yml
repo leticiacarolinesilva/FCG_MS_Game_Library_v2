@@ -36,6 +36,13 @@ jobs:
       run: |
         docker push ${{ secrets.ECR_REPOSITORY }}:latest
 
+    - name: Configurar credenciais AWS via OIDC
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        role-to-assume: arn:aws:iam::399668701651:role/GitHubActionsEKSRole
+        aws-region: ${{ secrets.AWS_REGION }}
+        role-session-name: GitHubActionsSession
+
     - name: Configurar o kubectl
       uses: azure/setup-kubectl@v3
       with:
@@ -44,13 +51,13 @@ jobs:
     - name: Obter credenciais do cluster EKS
       run: |
         aws eks update-kubeconfig --region ${{ secrets.AWS_REGION }} --name ${{ secrets.EKS_CLUSTER_NAME }}
-   
+
     - name: Debug - Testar conexão EKS
       run: |
         echo "Testando conexão com o cluster..."
         kubectl cluster-info
-        kubectl get nodes      
-        
+        kubectl get nodes
+
     - name: Create or update Kubernetes secret for Game Library
       run: |
         kubectl create secret generic fcg-ms-gamelibrary-secret \
@@ -58,8 +65,16 @@ jobs:
         --from-literal=Elastic__Uri="${{ secrets.ELASTIC_URI }}" \
         --from-literal=Elastic__XApiKey="${{ secrets.ELASTIC_XAPIKEY }}" \
         --dry-run=client -o yaml | kubectl apply -f -
-        
+
     - name: Aplicar Deployment no EKS
       run: |
-        kubectl set image deployment/users-deployment users=${{ secrets.ECR_REPOSITORY }}:latest --namespace default
-        kubectl rollout status deployment/users-deployment --namespace default
+        kubectl apply -f k8s/gamelibrary-deployment.yaml
+        kubectl rollout status deployment/fcg-ms-gamelibrary --namespace default
+    
+    - name: Verificar deployment
+      run: |
+        kubectl get pods -l app=fcg-ms-gamelibrary
+        kubectl get service fcg-ms-gamelibrary-service
+        echo "🎉 GameLibrary LoadBalancer URL:"
+        kubectl get service fcg-ms-gamelibrary-service -o jsonpath='{.status.loadBalancer.ingress[0].hostname}'
+
