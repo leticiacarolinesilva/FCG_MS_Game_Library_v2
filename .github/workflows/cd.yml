@@ -4,6 +4,11 @@ on:
   push:
     branches:
       - master
+      
+permissions:
+  id-token: write   # ← ESSENCIAL para OIDC
+  contents: read    # ← Para ler o código
+  
 jobs:
   deploy:
     name: Buildar e enviar imagem para o ECR
