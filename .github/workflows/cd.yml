@@ -3,7 +3,7 @@ name: CD - Deploy Docker no Amazon ECR
 on:
   push:
     branches:
-      - master
+      - main
       
 permissions:
   id-token: write   # ← ESSENCIAL para OIDC
