@@ -43,8 +43,8 @@ public class GameService : IGameService
 
         var createdGame = await _gameRepository.AddAsync(game);
 
-        if (EnviromentHelper.IsProductionOrDevelopment())
-            await _gameSearchRepository.IndexGameAsync(createdGame);
+        //if (EnviromentHelper.IsProductionOrDevelopment())
+          //  await _gameSearchRepository.IndexGameAsync(createdGame);
 
         return createdGame;
     }
@@ -78,8 +78,8 @@ public class GameService : IGameService
 
         await _gameRepository.UpdateAsync(game);
 
-        if (EnviromentHelper.IsProductionOrDevelopment())
-            await _gameSearchRepository.IndexGameAsync(game);
+        //if (EnviromentHelper.IsProductionOrDevelopment())
+           // await _gameSearchRepository.IndexGameAsync(game);
     }
 
     public async Task DeleteGameAsync(Guid id)
@@ -91,8 +91,8 @@ public class GameService : IGameService
 
         await _gameRepository.DeleteAsync(game);
 
-        if (EnviromentHelper.IsProductionOrDevelopment())
-            await _gameSearchRepository.DeleteGameAsync(id);
+        //if (EnviromentHelper.IsProductionOrDevelopment())
+           // await _gameSearchRepository.DeleteGameAsync(id);
     }
 
     public async Task<IEnumerable<Game>> GetGamesByGenreAsync(GameGenre genre)
