@@ -5,7 +5,7 @@ metadata:
   labels:
     app: fcg-ms-gamelibrary
 spec:
-  replicas: 2
+  replicas: 1
   selector:
     matchLabels:
       app: fcg-ms-gamelibrary
@@ -22,32 +22,27 @@ spec:
           env:
             - name: ASPNETCORE_ENVIRONMENT
               value: "Production"
-
             - name: ConnectionStrings__DefaultConnection
               valueFrom:
                 secretKeyRef:
                   name: fcg-ms-gamelibrary-secret
                   key: ConnectionStrings__DefaultConnection
-
             - name: Elastic__Uri
               valueFrom:
                 secretKeyRef:
                   name: fcg-ms-gamelibrary-secret
                   key: Elastic__Uri
-
             - name: Elastic__XApiKey
               valueFrom:
                 secretKeyRef:
                   name: fcg-ms-gamelibrary-secret
                   key: Elastic__XApiKey
-
           readinessProbe:
             httpGet:
               path: /health
               port: 80
             initialDelaySeconds: 10
             periodSeconds: 5
-
           livenessProbe:
             httpGet:
               path: /health
